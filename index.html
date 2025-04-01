@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR 在庫管理</title>
+</head>
+
+<body>
+    <h1>QR 在庫管理</h1>
+
+    <label for="scannedQR">QR スキャン結果：</label>
+    <input type="text" id="scannedQR" placeholder="QR をスキャン">
+
+    <label for="usedQuantity">使用数：</label>
+    <input type="number" id="usedQuantity" placeholder="何個使いましたか？">
+
+    <button onclick="updateStock()">在庫を更新</button>
+
+    <script>
+        function updateStock() {
+            const scannedQR = document.getElementById('scannedQR').value;
+            const usedQuantity = parseInt(document.getElementById('usedQuantity').value, 10);
+
+            fetch(`https://u2vkglhsx6cd.cybozu.com/k/v1/records.json?app=313&query=product_id="${scannedQR}"`, {
+                method: 'GET',
+                headers: { 'X-Cybozu-API-Token': 'SqA02932k9i9PaEP0ISvKrsq4iCos9GeYnHg3qXP' }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const product = data.records[0];
+                    const newStock = product.stock.value - usedQuantity;
+
+                    fetch("https://u2vkglhsx6cd.cybozu.com/k/v1/record.json", {
+                        method: 'PUT',
+                        headers: {
+                            'X-Cybozu-API-Token': 'SqA02932k9i9PaEP0ISvKrsq4iCos9GeYnHg3qXP',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            app: 313,
+                            id: product.$id.value,
+                            record: { stock: { value: newStock } }
+                        })
+                    })
+                        .then(response => response.json())
+                        .then(data => alert("在庫が更新されました！"))
+                        .catch(error => alert("エラー: " + error));
+                })
+                .catch(error => alert("エラー: " + error));
+        }
+    </script>
+</body>
+
+</html>
